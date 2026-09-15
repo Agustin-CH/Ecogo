@@ -1,4 +1,4 @@
-# ⚡ EvFinder - Buscador de Estaciones de Carga para Vehículos Eléctricos
+# ⚡ ECOGO - Cargadores Eléctricos & Buscador de Estaciones de Carga
 
 <p align="center">
   <img src="https://img.shields.io/badge/Platform-Android%2024%2B-10B981?style=for-the-badge&logo=android&logoColor=white" alt="Android" />
@@ -11,7 +11,7 @@
 
 ## 🎯 Finalidad de la Aplicación
 
-**EvFinder** es una plataforma móvil nativa para Android diseñada para **localizar, filtrar y monitorear en tiempo real estaciones de carga para vehículos eléctricos (EV) e híbridos enchufables** en Argentina.
+**ECOGO** es una plataforma móvil nativa para Android diseñada para **localizar, filtrar y monitorear en tiempo real estaciones de carga para vehículos eléctricos (EV) e híbridos enchufables** en Argentina.
 
 ### 💡 Problemas clave que resuelve:
 1. **Eliminación de la Ansiedad de Autonomía (*Range Anxiety*)**: Permite a los conductores de taxis, flotas y vehículos particulares conocer la ubicación exacta de los tótems de carga rápida (DC) y lenta (AC).

@@ -189,8 +189,8 @@ class StationRepository {
 
     // Map of userId -> Set of stationIds
     private val userFavorites = mutableMapOf<String, MutableSet<String>>(
-        "taxista@evfinder.app" to mutableSetOf("st_01", "st_04"),
-        "usuario@evfinder.app" to mutableSetOf("st_02")
+        "taxista@ecogo.app" to mutableSetOf("st_01", "st_04"),
+        "usuario@ecogo.app" to mutableSetOf("st_02")
     )
 
     private val _favoritesFlow = MutableStateFlow<Set<String>>(emptySet())

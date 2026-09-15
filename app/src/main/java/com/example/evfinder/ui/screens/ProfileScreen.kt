@@ -190,11 +190,11 @@ fun ProfileScreen(
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(imageVector = Icons.Default.Info, contentDescription = null, tint = EcoGreenPrimary)
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text(text = "Acerca de EvFinder", fontWeight = FontWeight.Bold)
+                    Text(text = "Acerca de ECOGO", fontWeight = FontWeight.Bold)
                 }
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
-                    text = "EvFinder es la plataforma líder para localizar y monitorear estaciones de carga para vehículos eléctricos e híbridos en tiempo real.",
+                    text = "ECOGO es la plataforma líder para localizar y monitorear estaciones de carga para vehículos eléctricos e híbridos en tiempo real.",
                     fontSize = 12.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )

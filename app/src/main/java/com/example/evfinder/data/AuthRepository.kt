@@ -8,8 +8,8 @@ import kotlinx.coroutines.flow.asStateFlow
 class AuthRepository {
 
     private val registeredUsers = mutableMapOf(
-        "taxista@evfinder.app" to Pair("Carlos Taxista", "123456"),
-        "usuario@evfinder.app" to Pair("Laura Gómez", "123456")
+        "taxista@ecogo.app" to Pair("Carlos Taxista", "123456"),
+        "usuario@ecogo.app" to Pair("Laura Gómez", "123456")
     )
 
     private val _currentUser = MutableStateFlow<User>(User.guest())
