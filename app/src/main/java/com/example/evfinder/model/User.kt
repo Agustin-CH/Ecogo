@@ -10,7 +10,7 @@ data class User(
         fun guest(): User = User(
             id = "guest_user",
             name = "Invitado",
-            email = "invitado@evfinder.app",
+            email = "invitado@ecogo.app",
             isGuest = true
         )
     }

@@ -3,6 +3,7 @@ package com.example.evfinder.ui.components
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -13,12 +14,10 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
-import androidx.compose.material.icons.filled.ElectricCar
 import androidx.compose.material.icons.filled.EvStation
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.AssistChipDefaults
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -48,7 +47,7 @@ fun AppHeader(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 12.dp),
+                .padding(horizontal = 16.dp, vertical = 10.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
@@ -65,30 +64,39 @@ fun AppHeader(
                 ) {
                     Icon(
                         imageVector = Icons.Default.EvStation,
-                        contentDescription = "EvFinder Logo",
+                        contentDescription = "ECOGO Logo",
                         tint = Color.White,
                         modifier = Modifier.size(24.dp)
                     )
                 }
                 Spacer(modifier = Modifier.width(10.dp))
-                Row(
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
+                Column {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            text = "ECO",
+                            style = MaterialTheme.typography.titleLarge.copy(
+                                fontWeight = FontWeight.ExtraBold,
+                                fontSize = 20.sp
+                            ),
+                            color = EcoGreenPrimary
+                        )
+                        Text(
+                            text = "GO",
+                            style = MaterialTheme.typography.titleLarge.copy(
+                                fontWeight = FontWeight.ExtraBold,
+                                fontSize = 20.sp
+                            ),
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                    }
                     Text(
-                        text = "Ev",
-                        style = MaterialTheme.typography.titleLarge.copy(
+                        text = "CARGADORES ELÉCTRICOS",
+                        style = MaterialTheme.typography.labelSmall.copy(
+                            fontSize = 8.sp,
                             fontWeight = FontWeight.Bold,
-                            fontSize = 22.sp
+                            letterSpacing = 0.8.sp
                         ),
                         color = EcoGreenPrimary
-                    )
-                    Text(
-                        text = "Finder",
-                        style = MaterialTheme.typography.titleLarge.copy(
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 22.sp
-                        ),
-                        color = MaterialTheme.colorScheme.onSurface
                     )
                 }
             }
@@ -100,7 +108,7 @@ fun AppHeader(
                     Text(
                         text = if (currentUser.isGuest) "Invitado" else currentUser.name.split(" ").first(),
                         fontWeight = FontWeight.Medium,
-                        fontSize = 13.sp
+                        fontSize = 12.sp
                     )
                 },
                 leadingIcon = {
@@ -108,7 +116,7 @@ fun AppHeader(
                         imageVector = Icons.Default.AccountCircle,
                         contentDescription = "Usuario",
                         tint = if (currentUser.isGuest) MaterialTheme.colorScheme.outline else EcoGreenPrimary,
-                        modifier = Modifier.size(18.dp)
+                        modifier = Modifier.size(16.dp)
                     )
                 },
                 colors = AssistChipDefaults.assistChipColors(
