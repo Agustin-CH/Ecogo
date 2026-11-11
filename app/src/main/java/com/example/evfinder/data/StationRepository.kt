@@ -389,6 +389,7 @@ class StationRepository {
             }
 
             // Connector type filter
+            // Fix: We must show stations that support AT LEAST ONE of the selected connectors
             val connectorMatch = filter.selectedConnectors.isEmpty() ||
                     station.connectors.any { it in filter.selectedConnectors }
 
