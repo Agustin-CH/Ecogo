@@ -19,7 +19,6 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
@@ -28,7 +27,9 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.example.evfinder.ui.components.AppHeader
 import com.example.evfinder.ui.components.AuthDialog
+import com.example.evfinder.ui.components.ChargingSimModal
 import com.example.evfinder.ui.components.FilterBottomSheet
+import com.example.evfinder.ui.components.VehicleSelectorDialog
 import com.example.evfinder.ui.screens.FavoritesScreen
 import com.example.evfinder.ui.screens.MapScreen
 import com.example.evfinder.ui.screens.ProfileScreen
@@ -59,6 +60,9 @@ fun EvFinderApp(
     val userMessage by viewModel.userMessage.collectAsState()
     val isFilterSheetOpen by viewModel.isFilterSheetOpen.collectAsState()
     val isAuthDialogOpen by viewModel.isAuthDialogOpen.collectAsState()
+    val isVehicleSelectorOpen by viewModel.isVehicleSelectorOpen.collectAsState()
+    val isChargingModalOpen by viewModel.isChargingModalOpen.collectAsState()
+    val chargingSession by viewModel.chargingSession.collectAsState()
 
     val snackbarHostState = remember { SnackbarHostState() }
 
@@ -184,7 +188,7 @@ fun EvFinderApp(
             }
         }
 
-        // Global Modals: Filter Sheet & Auth Dialog
+        // Global Modals
         if (isFilterSheetOpen) {
             FilterBottomSheet(
                 filter = filterState,
@@ -203,6 +207,22 @@ fun EvFinderApp(
                 onRegister = { name, email, pass -> viewModel.register(name, email, pass) {} },
                 onGuestMode = { viewModel.loginAsGuest() },
                 onDismiss = { viewModel.toggleAuthDialog(false) }
+            )
+        }
+
+        if (isVehicleSelectorOpen) {
+            VehicleSelectorDialog(
+                selectedVehicle = currentUser.selectedVehicle,
+                onVehicleSelected = { viewModel.selectVehicle(it) },
+                onDismiss = { viewModel.toggleVehiclePicker(false) }
+            )
+        }
+
+        if (isChargingModalOpen) {
+            ChargingSimModal(
+                session = chargingSession,
+                onStopSession = { viewModel.stopChargingSession() },
+                onClose = { viewModel.closeChargingModal() }
             )
         }
     }

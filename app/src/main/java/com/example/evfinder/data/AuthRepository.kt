@@ -1,6 +1,7 @@
 package com.example.evfinder.data
 
 import com.example.evfinder.model.User
+import com.example.evfinder.model.VehicleModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -23,7 +24,8 @@ class AuthRepository {
                 id = cleanEmail,
                 name = userRecord.first,
                 email = cleanEmail,
-                isGuest = false
+                isGuest = false,
+                selectedVehicle = VehicleModel.sampleVehicles.first() // Peugeot e-208 default
             )
             _currentUser.value = user
             Result.success(user)
@@ -54,10 +56,15 @@ class AuthRepository {
             id = cleanEmail,
             name = cleanName,
             email = cleanEmail,
-            isGuest = false
+            isGuest = false,
+            selectedVehicle = VehicleModel.sampleVehicles.first()
         )
         _currentUser.value = user
         return Result.success(user)
+    }
+
+    fun updateUserVehicle(vehicle: VehicleModel?) {
+        _currentUser.value = _currentUser.value.copy(selectedVehicle = vehicle)
     }
 
     fun loginAsGuest() {
