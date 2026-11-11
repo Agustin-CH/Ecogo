@@ -27,10 +27,12 @@ import androidx.compose.material.icons.filled.Directions
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.HourglassTop
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.People
 import androidx.compose.material.icons.filled.Power
 import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.Timer
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -86,11 +88,15 @@ fun StationDetailScreen(
     val reviews = remember(station.id) { viewModel.getReviewsForStation(station.id) }
     val waitingList = remember(station.id) { viewModel.getWaitingList(station.id) }
     val activeReservation by viewModel.activeReservation.collectAsState()
+    val isInQueue = remember(station.id, waitingList.size) { viewModel.isUserInWaitingList(station.id) }
 
     val hasActiveReservationForStation = activeReservation != null && activeReservation?.stationId == station.id
     val isAvailable = station.status == StationStatus.AVAILABLE && station.availablePlugs > 0
     val isBusy = station.status == StationStatus.BUSY || station.availablePlugs == 0
     val isOutOfService = station.status == StationStatus.OUT_OF_SERVICE
+
+    // Calculate estimated battery charging time (20% -> 80% = ~30 kWh)
+    val estChargeMins = (30.0 / station.powerKw * 60.0).toInt().coerceIn(15, 90)
 
     Scaffold(
         topBar = {
@@ -240,10 +246,30 @@ fun StationDetailScreen(
                             value = "$${station.pricePerKwh.toInt()} / kWh"
                         )
                         DetailInfoItem(
-                            icon = Icons.Default.AccessTime,
-                            label = "Horario",
-                            value = station.openingHours
+                            icon = Icons.Default.Timer,
+                            label = "Est. Carga (80%)",
+                            value = "~$estChargeMins min"
                         )
+                    }
+
+                    Spacer(modifier = Modifier.height(10.dp))
+                    Surface(
+                        shape = RoundedCornerShape(10.dp),
+                        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(imageVector = Icons.Default.Info, contentDescription = null, tint = EcoGreenPrimary, modifier = Modifier.size(14.dp))
+                            Spacer(modifier = Modifier.width(6.dp))
+                            Text(
+                                text = "La reserva de 15 min otorga tiempo de gracia para conducir hasta la estación.",
+                                fontSize = 11.sp,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
                     }
                 }
             }
@@ -255,17 +281,61 @@ fun StationDetailScreen(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                if (isBusy) {
-                    // When station is BUSY: Button 1 = Join Waiting Queue
+                if (isOutOfService) {
+                    // Out of service states
                     Button(
-                        onClick = { viewModel.joinWaitingList(station) },
+                        onClick = {},
                         modifier = Modifier.weight(1f),
-                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFF59E0B)),
+                        enabled = false,
                         shape = RoundedCornerShape(12.dp)
                     ) {
-                        Icon(imageVector = Icons.Default.HourglassTop, contentDescription = null, modifier = Modifier.size(16.dp))
+                        Text("Sin Servicio", fontSize = 12.sp)
+                    }
+                    Button(
+                        onClick = {},
+                        modifier = Modifier.weight(1f),
+                        enabled = false,
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Text("Carga Bloqueada", fontSize = 12.sp)
+                    }
+                } else if (isBusy) {
+                    // When station is BUSY: Button 1 = Join/Leave Queue
+                    if (isInQueue) {
+                        Button(
+                            onClick = { viewModel.leaveWaitingList(station) },
+                            modifier = Modifier.weight(1f),
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFEF4444)),
+                            shape = RoundedCornerShape(12.dp)
+                        ) {
+                            Icon(imageVector = Icons.Default.HourglassTop, contentDescription = null, modifier = Modifier.size(16.dp))
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text("Salir de Fila", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                        }
+                    } else {
+                        Button(
+                            onClick = { viewModel.joinWaitingList(station) },
+                            modifier = Modifier.weight(1f),
+                            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFF59E0B)),
+                            shape = RoundedCornerShape(12.dp)
+                        ) {
+                            Icon(imageVector = Icons.Default.HourglassTop, contentDescription = null, modifier = Modifier.size(16.dp))
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text("Unirse a Fila", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                        }
+                    }
+
+                    // Button 2: Disabled unless user holds active reservation
+                    Button(
+                        onClick = { viewModel.startChargingSession(station) },
+                        modifier = Modifier.weight(1f),
+                        colors = ButtonDefaults.buttonColors(containerColor = EcoGreenPrimary),
+                        enabled = hasActiveReservationForStation,
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Icon(imageVector = Icons.Default.BatteryChargingFull, contentDescription = null, modifier = Modifier.size(16.dp))
                         Spacer(modifier = Modifier.width(4.dp))
-                        Text("Unirse a Fila", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                        Text(if (hasActiveReservationForStation) "Iniciar Carga" else "Ocupado", fontSize = 12.sp, fontWeight = FontWeight.Bold)
                     }
                 } else {
                     // When station is AVAILABLE: Button 1 = Reserve 15m
@@ -284,20 +354,19 @@ fun StationDetailScreen(
                         Spacer(modifier = Modifier.width(4.dp))
                         Text("Reservar (15m)", fontSize = 12.sp, fontWeight = FontWeight.Bold)
                     }
-                }
 
-                // Button 2: Start Charging Session (only if Available OR user holds an active reservation)
-                val canStartCharge = isAvailable || hasActiveReservationForStation
-                Button(
-                    onClick = { viewModel.startChargingSession(station) },
-                    modifier = Modifier.weight(1f),
-                    colors = ButtonDefaults.buttonColors(containerColor = EcoGreenPrimary),
-                    enabled = canStartCharge && !isOutOfService,
-                    shape = RoundedCornerShape(12.dp)
-                ) {
-                    Icon(imageVector = Icons.Default.BatteryChargingFull, contentDescription = null, modifier = Modifier.size(16.dp))
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text("Iniciar Carga", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                    // Button 2: Start Charging Session
+                    Button(
+                        onClick = { viewModel.startChargingSession(station) },
+                        modifier = Modifier.weight(1f),
+                        colors = ButtonDefaults.buttonColors(containerColor = EcoGreenPrimary),
+                        enabled = isAvailable || hasActiveReservationForStation,
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Icon(imageVector = Icons.Default.BatteryChargingFull, contentDescription = null, modifier = Modifier.size(16.dp))
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text("Iniciar Carga", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                    }
                 }
 
                 // Button 3: Report Technical Problem
