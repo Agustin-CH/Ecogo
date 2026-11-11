@@ -277,6 +277,9 @@ class StationRepository {
         // We just register it for administrators/community to see.
     }
 
+    private val _waitingListUpdateTrigger = MutableStateFlow(0)
+    val waitingListUpdateTrigger: StateFlow<Int> = _waitingListUpdateTrigger.asStateFlow()
+
     fun getWaitingList(stationId: String): List<String> {
         return waitingListMap[stationId] ?: emptyList()
     }
@@ -290,12 +293,14 @@ class StationRepository {
         val queue = waitingListMap.getOrPut(stationId) { mutableListOf() }
         val entryName = "$userName (Tu Turno)"
         queue.add(entryName)
+        _waitingListUpdateTrigger.value += 1
         return queue.size
     }
 
     fun leaveWaitingList(stationId: String, userName: String) {
         val queue = waitingListMap[stationId] ?: return
         queue.removeAll { it.contains(userName) || it.contains("Tu Turno") }
+        _waitingListUpdateTrigger.value += 1
     }
 
     fun reservePlug(station: ChargingStation, connector: ConnectorType): Result<ChargingReservation> {

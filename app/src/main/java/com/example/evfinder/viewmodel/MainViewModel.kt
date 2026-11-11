@@ -35,6 +35,7 @@ class MainViewModel(
     val currentUser: StateFlow<User> = authRepository.currentUser
     val favorites: StateFlow<Set<String>> = stationRepository.favoritesFlow
     val activeReservation: StateFlow<ChargingReservation?> = stationRepository.activeReservation
+    val waitingListUpdateTrigger: StateFlow<Int> = stationRepository.waitingListUpdateTrigger
 
     private val _filterState = MutableStateFlow(StationFilter())
     val filterState: StateFlow<StationFilter> = _filterState.asStateFlow()

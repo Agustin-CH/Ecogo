@@ -85,10 +85,12 @@ fun StationDetailScreen(
     val context = LocalContext.current
     var isReportDialogOpen by remember { mutableStateOf(false) }
     var isReviewDialogOpen by remember { mutableStateOf(false) }
+    val waitingListUpdateTrigger by viewModel.waitingListUpdateTrigger.collectAsState()
+    
     val reviews = remember(station.id) { viewModel.getReviewsForStation(station.id) }
-    val waitingList = remember(station.id) { viewModel.getWaitingList(station.id) }
+    val waitingList = remember(station.id, waitingListUpdateTrigger) { viewModel.getWaitingList(station.id) }
     val activeReservation by viewModel.activeReservation.collectAsState()
-    val isInQueue = remember(station.id, waitingList.size) { viewModel.isUserInWaitingList(station.id) }
+    val isInQueue = remember(station.id, waitingListUpdateTrigger) { viewModel.isUserInWaitingList(station.id) }
 
     val hasActiveReservationForStation = activeReservation != null && activeReservation?.stationId == station.id
     val isAvailable = station.status == StationStatus.AVAILABLE && station.availablePlugs > 0
