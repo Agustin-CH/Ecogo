@@ -529,7 +529,7 @@ fun StationDetailScreen(
     if (isReportDialogOpen) {
         ReportProblemDialog(
             stationName = station.name,
-            onReportSubmitted = { viewModel.reportStationProblem(station.id) },
+            onReportSubmitted = { comment -> viewModel.reportStationProblem(station.id, comment) },
             onDismiss = { isReportDialogOpen = false }
         )
     }

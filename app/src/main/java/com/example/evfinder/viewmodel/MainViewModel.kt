@@ -315,9 +315,9 @@ class MainViewModel(
         _userMessage.value = "¡Gracias por compartir tu opinión!"
     }
 
-    fun reportStationProblem(stationId: String) {
-        stationRepository.reportProblem(stationId)
-        _userMessage.value = "Reporte enviado. Estación marcada en mantenimiento."
+    fun reportStationProblem(stationId: String, comment: String) {
+        stationRepository.reportProblem(stationId, comment)
+        _userMessage.value = "Reporte enviado. Gracias por avisar a la comunidad."
     }
 
     fun login(email: String, pass: String, onSuccess: () -> Unit = {}) {

@@ -28,7 +28,7 @@ import androidx.compose.ui.window.Dialog
 @Composable
 fun ReportProblemDialog(
     stationName: String,
-    onReportSubmitted: () -> Unit,
+    onReportSubmitted: (String) -> Unit,
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -61,7 +61,7 @@ fun ReportProblemDialog(
 
                 Button(
                     onClick = {
-                        onReportSubmitted()
+                        onReportSubmitted(reason)
                         onDismiss()
                     },
                     modifier = Modifier.fillMaxWidth(),
