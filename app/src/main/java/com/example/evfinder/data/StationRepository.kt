@@ -67,20 +67,20 @@ class StationRepository {
         ),
         ChargingStation(
             id = "st_04",
-            name = "Axion Energy - Belgrano",
-            operator = "Axion Energy",
-            address = "Av. Cabildo 2200",
+            name = "ChargeBox Net - Recoleta Mall",
+            operator = "ChargeBox",
+            address = "Vicente López 2050",
             city = "Buenos Aires",
-            latitude = -34.5612,
-            longitude = -58.4560,
-            powerKw = 120,
-            connectors = listOf(ConnectorType.CCS_2, ConnectorType.GBT),
+            latitude = -34.5888,
+            longitude = -58.3912,
+            powerKw = 22,
+            connectors = listOf(ConnectorType.TYPE_2),
             status = StationStatus.AVAILABLE,
-            pricePerKwh = 510.0,
-            openingHours = "24 Horas",
-            rating = 4.8,
-            totalPlugs = 4,
-            availablePlugs = 2
+            pricePerKwh = 390.0,
+            openingHours = "10:00 - 22:00",
+            rating = 4.4,
+            totalPlugs = 2,
+            availablePlugs = 1
         ),
         ChargingStation(
             id = "st_05",
@@ -260,6 +260,26 @@ class StationRepository {
         list.add(0, newReview)
     }
 
+    fun reportProblem(stationId: String, comment: String, reporterName: String) {
+        // Add a 1-star review to reflect the problem in the community feed
+        val problemReview = StationReview(
+            id = "r_${System.currentTimeMillis()}",
+            stationId = stationId,
+            userName = reporterName.ifBlank { "Usuario Anónimo" },
+            rating = 1.0,
+            comment = "⚠️ Reporte de falla técnica: $comment",
+            dateText = "Reciente"
+        )
+        val list = reviewsMap.getOrPut(stationId) { mutableListOf() }
+        list.add(0, problemReview)
+        
+        // We no longer turn off the station completely for one report. 
+        // We just register it for administrators/community to see.
+    }
+
+    private val _waitingListUpdateTrigger = MutableStateFlow(0)
+    val waitingListUpdateTrigger: StateFlow<Int> = _waitingListUpdateTrigger.asStateFlow()
+
     fun getWaitingList(stationId: String): List<String> {
         return waitingListMap[stationId] ?: emptyList()
     }
@@ -273,12 +293,14 @@ class StationRepository {
         val queue = waitingListMap.getOrPut(stationId) { mutableListOf() }
         val entryName = "$userName (Tu Turno)"
         queue.add(entryName)
+        _waitingListUpdateTrigger.value += 1
         return queue.size
     }
 
     fun leaveWaitingList(stationId: String, userName: String) {
         val queue = waitingListMap[stationId] ?: return
         queue.removeAll { it.contains(userName) || it.contains("Tu Turno") }
+        _waitingListUpdateTrigger.value += 1
     }
 
     fun reservePlug(station: ChargingStation, connector: ConnectorType): Result<ChargingReservation> {
@@ -362,14 +384,7 @@ class StationRepository {
         _activeReservation.value = null
     }
 
-    fun reportProblem(stationId: String) {
-        val updatedList = _allStations.value.map { st ->
-            if (st.id == stationId) {
-                st.copy(status = StationStatus.OUT_OF_SERVICE, availablePlugs = 0)
-            } else st
-        }
-        _allStations.value = updatedList
-    }
+    // OLD METHOD REMOVED - REPLACED BY reportProblem(stationId, comment)
 
     fun filterStations(filter: StationFilter): List<ChargingStation> {
         return _allStations.value.filter { station ->

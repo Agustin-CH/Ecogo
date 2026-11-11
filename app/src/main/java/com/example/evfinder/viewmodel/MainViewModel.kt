@@ -35,6 +35,7 @@ class MainViewModel(
     val currentUser: StateFlow<User> = authRepository.currentUser
     val favorites: StateFlow<Set<String>> = stationRepository.favoritesFlow
     val activeReservation: StateFlow<ChargingReservation?> = stationRepository.activeReservation
+    val waitingListUpdateTrigger: StateFlow<Int> = stationRepository.waitingListUpdateTrigger
 
     private val _filterState = MutableStateFlow(StationFilter())
     val filterState: StateFlow<StationFilter> = _filterState.asStateFlow()
@@ -311,13 +312,26 @@ class MainViewModel(
 
     fun addReview(stationId: String, rating: Double, comment: String) {
         val user = currentUser.value
-        stationRepository.addReview(stationId, if (user.isGuest) "Usuario ECOGO" else user.name, rating, comment)
+        if (user.isGuest) {
+            _userMessage.value = "Inicia sesión para publicar una reseña"
+            _isAuthDialogOpen.value = true
+            return
+        }
+        
+        stationRepository.addReview(stationId, user.name, rating, comment)
         _userMessage.value = "¡Gracias por compartir tu opinión!"
     }
 
-    fun reportStationProblem(stationId: String) {
-        stationRepository.reportProblem(stationId)
-        _userMessage.value = "Reporte enviado. Estación marcada en mantenimiento."
+    fun reportStationProblem(stationId: String, comment: String) {
+        val user = currentUser.value
+        if (user.isGuest) {
+            _userMessage.value = "Inicia sesión para reportar un problema técnico"
+            _isAuthDialogOpen.value = true
+            return
+        }
+        
+        stationRepository.reportProblem(stationId, comment, user.name)
+        _userMessage.value = "Reporte enviado. Gracias por avisar a la comunidad."
     }
 
     fun login(email: String, pass: String, onSuccess: () -> Unit = {}) {
