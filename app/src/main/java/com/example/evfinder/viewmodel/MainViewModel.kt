@@ -153,8 +153,16 @@ class MainViewModel(
         authRepository.updateUserVehicle(vehicle)
         if (vehicle != null) {
             // Automatically apply filter matching vehicle's supported connectors
-            _filterState.value = _filterState.value.copy(selectedConnectors = vehicle.supportedConnectors.toSet())
+            _filterState.value = _filterState.value.copy(
+                selectedConnectors = vehicle.supportedConnectors.toSet(),
+                // Also automatically clear any strict power category that might exclude the vehicle's connectors
+                powerCategory = PowerCategory.ALL
+            )
             _userMessage.value = "Filtro de conectores actualizado para ${vehicle.brand} ${vehicle.model}"
+        } else {
+            // If user unselects vehicle, clear connector filters
+            _filterState.value = _filterState.value.copy(selectedConnectors = emptySet())
+            _userMessage.value = "Selección de vehículo removida"
         }
         _isVehicleSelectorOpen.value = false
     }

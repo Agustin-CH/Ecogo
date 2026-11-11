@@ -374,13 +374,16 @@ fun MapScreen(
             exit = slideOutVertically(targetOffsetY = { it }) + fadeOut(),
             modifier = Modifier.align(Alignment.BottomCenter)
         ) {
-            selectedStation?.let { station ->
+            selectedStation?.let { st ->
+                // Ensure we get the most up-to-date station data from the view model
+                val updatedStation = stations.firstOrNull { it.id == st.id } ?: st
+                
                 StationSummaryCard(
-                    station = station,
-                    isFavorite = favorites.contains(station.id),
-                    onToggleFavorite = { viewModel.toggleFavorite(station.id) },
-                    onNavigateDirections = { viewModel.navigateToStationDirections(context, station) },
-                    onViewDetail = { onViewDetail(station) },
+                    station = updatedStation,
+                    isFavorite = favorites.contains(updatedStation.id),
+                    onToggleFavorite = { viewModel.toggleFavorite(updatedStation.id) },
+                    onNavigateDirections = { viewModel.navigateToStationDirections(context, updatedStation) },
+                    onViewDetail = { onViewDetail(updatedStation) },
                     onClose = { viewModel.selectStation(null) }
                 )
             }
