@@ -311,12 +311,25 @@ class MainViewModel(
 
     fun addReview(stationId: String, rating: Double, comment: String) {
         val user = currentUser.value
-        stationRepository.addReview(stationId, if (user.isGuest) "Usuario ECOGO" else user.name, rating, comment)
+        if (user.isGuest) {
+            _userMessage.value = "Inicia sesión para publicar una reseña"
+            _isAuthDialogOpen.value = true
+            return
+        }
+        
+        stationRepository.addReview(stationId, user.name, rating, comment)
         _userMessage.value = "¡Gracias por compartir tu opinión!"
     }
 
     fun reportStationProblem(stationId: String, comment: String) {
-        stationRepository.reportProblem(stationId, comment)
+        val user = currentUser.value
+        if (user.isGuest) {
+            _userMessage.value = "Inicia sesión para reportar un problema técnico"
+            _isAuthDialogOpen.value = true
+            return
+        }
+        
+        stationRepository.reportProblem(stationId, comment, user.name)
         _userMessage.value = "Reporte enviado. Gracias por avisar a la comunidad."
     }
 

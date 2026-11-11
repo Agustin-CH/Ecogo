@@ -260,12 +260,12 @@ class StationRepository {
         list.add(0, newReview)
     }
 
-    fun reportProblem(stationId: String, comment: String) {
+    fun reportProblem(stationId: String, comment: String, reporterName: String) {
         // Add a 1-star review to reflect the problem in the community feed
         val problemReview = StationReview(
             id = "r_${System.currentTimeMillis()}",
             stationId = stationId,
-            userName = "Usuario Anónimo",
+            userName = reporterName.ifBlank { "Usuario Anónimo" },
             rating = 1.0,
             comment = "⚠️ Reporte de falla técnica: $comment",
             dateText = "Reciente"
