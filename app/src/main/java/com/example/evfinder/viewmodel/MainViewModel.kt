@@ -207,6 +207,17 @@ class MainViewModel(
         _userMessage.value = "Te uniste a la fila de espera para ${station.name}. Posición #$position"
     }
 
+    fun leaveWaitingList(station: ChargingStation) {
+        val user = currentUser.value
+        stationRepository.leaveWaitingList(station.id, user.name)
+        _userMessage.value = "Saliste de la fila de espera de ${station.name}"
+    }
+
+    fun isUserInWaitingList(stationId: String): Boolean {
+        val user = currentUser.value
+        return stationRepository.isUserInWaitingList(stationId, user.name)
+    }
+
     fun getWaitingList(stationId: String): List<String> {
         return stationRepository.getWaitingList(stationId)
     }

@@ -264,11 +264,21 @@ class StationRepository {
         return waitingListMap[stationId] ?: emptyList()
     }
 
+    fun isUserInWaitingList(stationId: String, userName: String): Boolean {
+        val queue = waitingListMap[stationId] ?: return false
+        return queue.any { it.contains(userName) || it.contains("Tu Turno") }
+    }
+
     fun joinWaitingList(stationId: String, userName: String): Int {
         val queue = waitingListMap.getOrPut(stationId) { mutableListOf() }
         val entryName = "$userName (Tu Turno)"
         queue.add(entryName)
         return queue.size
+    }
+
+    fun leaveWaitingList(stationId: String, userName: String) {
+        val queue = waitingListMap[stationId] ?: return
+        queue.removeAll { it.contains(userName) || it.contains("Tu Turno") }
     }
 
     fun reservePlug(station: ChargingStation, connector: ConnectorType): Result<ChargingReservation> {
@@ -302,13 +312,13 @@ class StationRepository {
             ?: return Result.failure(Exception("Estación no encontrada."))
 
         if (station.status == StationStatus.OUT_OF_SERVICE) {
-            return Result.failure(Exception("La estación se encuentra fuera de servicio."))
+            return Result.failure(Exception("La estación se encuentra fuera de servicio por mantenimiento."))
         }
 
         // Check if station has available plugs OR user holds an active reservation for this station
         val hasReservation = currentRes != null && currentRes.stationId == stationId
         if (station.availablePlugs <= 0 && !hasReservation) {
-            return Result.failure(Exception("Todas las mangueras están ocupadas. Por favor únete a la fila de espera."))
+            return Result.failure(Exception("Todas las mangueras están ocupadas. Únete a la fila de espera."))
         }
 
         // Consume plug or active reservation
