@@ -4,7 +4,8 @@ data class User(
     val id: String,
     val name: String,
     val email: String,
-    val isGuest: Boolean = false
+    val isGuest: Boolean = false,
+    val selectedVehicle: VehicleModel? = null
 ) {
     companion object {
         fun guest(): User = User(

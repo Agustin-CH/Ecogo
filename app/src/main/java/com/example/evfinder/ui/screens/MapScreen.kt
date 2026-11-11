@@ -28,6 +28,7 @@ import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.FilterAlt
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
+import androidx.compose.material.icons.filled.Layers
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Badge
@@ -63,6 +64,7 @@ import com.example.evfinder.model.ChargingStation
 import com.example.evfinder.model.PowerCategory
 import com.example.evfinder.model.StationFilter
 import com.example.evfinder.ui.components.GoogleMapView
+import com.example.evfinder.ui.components.OpenMapView
 import com.example.evfinder.ui.components.StationSummaryCard
 import com.example.evfinder.ui.theme.EcoGreenPrimary
 import com.example.evfinder.viewmodel.MainViewModel
@@ -79,16 +81,27 @@ fun MapScreen(
 ) {
     val context = LocalContext.current
     var isSearchExpanded by remember { mutableStateOf(false) }
+    var useOpenStreetMap by remember { mutableStateOf(false) } // Default to Google Maps SDK
 
     Box(modifier = modifier.fillMaxSize()) {
-        // Official Google Maps SDK View Layer
-        GoogleMapView(
-            stations = stations,
-            selectedStation = selectedStation,
-            onStationSelected = { station ->
-                viewModel.selectStation(station)
-            }
-        )
+        // Map View Layer (OpenStreetMap vector engine or Google Maps SDK)
+        if (useOpenStreetMap) {
+            OpenMapView(
+                stations = stations,
+                selectedStation = selectedStation,
+                onStationSelected = { station ->
+                    viewModel.selectStation(station)
+                }
+            )
+        } else {
+            GoogleMapView(
+                stations = stations,
+                selectedStation = selectedStation,
+                onStationSelected = { station ->
+                    viewModel.selectStation(station)
+                }
+            )
+        }
 
         // Collapsible / Expandable Top Search Bar
         Surface(
@@ -220,7 +233,7 @@ fun MapScreen(
 
                     Spacer(modifier = Modifier.height(8.dp))
 
-                    // Quick Power Category Filters Row (RF-09)
+                    // Quick Power Category Filters Row
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         verticalAlignment = Alignment.CenterVertically
@@ -274,7 +287,7 @@ fun MapScreen(
             }
         }
 
-        // Empty Search Results Card (RF-23)
+        // Empty Search Results Card
         if (stations.isEmpty()) {
             Card(
                 modifier = Modifier
@@ -310,13 +323,23 @@ fun MapScreen(
             }
         }
 
-        // Floating Action Buttons: Refresh & Filter
+        // Floating Action Buttons: Map Layer Toggle, Refresh & Filter
         Column(
             modifier = Modifier
                 .align(Alignment.BottomEnd)
                 .padding(bottom = if (selectedStation != null) 230.dp else 16.dp, end = 16.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
+            // Map Layer Switcher (OpenStreetMap vs Google Maps)
+            FloatingActionButton(
+                onClick = { useOpenStreetMap = !useOpenStreetMap },
+                containerColor = MaterialTheme.colorScheme.surface,
+                contentColor = EcoGreenPrimary,
+                modifier = Modifier.size(44.dp)
+            ) {
+                Icon(imageVector = Icons.Default.Layers, contentDescription = "Cambiar Capa de Mapa", modifier = Modifier.size(20.dp))
+            }
+
             FloatingActionButton(
                 onClick = { viewModel.refreshStations() },
                 containerColor = MaterialTheme.colorScheme.surface,
@@ -344,7 +367,7 @@ fun MapScreen(
             }
         }
 
-        // Selected Station Summary Card Overlay (RF-14)
+        // Selected Station Summary Card Overlay
         AnimatedVisibility(
             visible = selectedStation != null,
             enter = slideInVertically(initialOffsetY = { it }) + fadeIn(),

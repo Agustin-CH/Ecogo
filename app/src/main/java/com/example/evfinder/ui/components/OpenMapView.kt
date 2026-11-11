@@ -37,13 +37,14 @@ fun OpenMapView(
     val context = LocalContext.current
 
     val mapView = remember {
-        Configuration.getInstance().userAgentValue = "EvFinderApp/1.0 (Android; com.example.evfinder)"
-        Configuration.getInstance().load(context, context.getSharedPreferences("osmdroid", android.content.Context.MODE_PRIVATE))
+        // Fix for OSM 403 Access Blocked: Set a compliant user-agent string
+        Configuration.getInstance().userAgentValue = "Mozilla/5.0 (Android 14; Mobile; rv:122.0) Gecko/122.0 Firefox/122.0"
+        Configuration.getInstance().load(context, context.getSharedPreferences("osmdroid_config", android.content.Context.MODE_PRIVATE))
 
         MapView(context).apply {
             setTileSource(TileSourceFactory.MAPNIK)
             setMultiTouchControls(true)
-            isTilesScaledToDpi = true // High DPI rendering for crisp sharp text and roads on Samsung Ultra S25
+            isTilesScaledToDpi = true
             setTilesScaledToDpi(true)
             zoomController.setVisibility(org.osmdroid.views.CustomZoomButtonsController.Visibility.NEVER)
             controller.setZoom(13.0)

@@ -18,13 +18,14 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountCircle
-import androidx.compose.material.icons.filled.Co2
+import androidx.compose.material.icons.filled.BatteryChargingFull
+import androidx.compose.material.icons.filled.Bookmark
+import androidx.compose.material.icons.filled.DirectionsCar
 import androidx.compose.material.icons.filled.Eco
 import androidx.compose.material.icons.filled.EvStation
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Login
 import androidx.compose.material.icons.filled.Logout
-import androidx.compose.material.icons.filled.Shield
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -35,6 +36,8 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -53,6 +56,9 @@ fun ProfileScreen(
     viewModel: MainViewModel,
     modifier: Modifier = Modifier
 ) {
+    val activeReservation by viewModel.activeReservation.collectAsState()
+    val chargingSession by viewModel.chargingSession.collectAsState()
+
     Column(
         modifier = modifier
             .fillMaxSize()
@@ -145,6 +151,132 @@ fun ProfileScreen(
                         Icon(imageVector = Icons.Default.Logout, contentDescription = null, tint = Color(0xFFEF4444))
                         Spacer(modifier = Modifier.width(8.dp))
                         Text("Cerrar Sesión", color = Color(0xFFEF4444), fontWeight = FontWeight.Bold)
+                    }
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // Vehicle Config Card
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(20.dp),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+            elevation = CardDefaults.cardElevation(2.dp)
+        ) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(imageVector = Icons.Default.DirectionsCar, contentDescription = null, tint = EcoGreenPrimary)
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(text = "Mi Vehículo Eléctrico", fontWeight = FontWeight.Bold)
+                    }
+
+                    OutlinedButton(
+                        onClick = { viewModel.toggleVehiclePicker(true) },
+                        shape = RoundedCornerShape(10.dp)
+                    ) {
+                        Text(if (currentUser.selectedVehicle == null) "Seleccionar" else "Cambiar", fontSize = 12.sp)
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                if (currentUser.selectedVehicle != null) {
+                    val veh = currentUser.selectedVehicle
+                    Surface(
+                        shape = RoundedCornerShape(12.dp),
+                        color = EcoGreenPrimary.copy(alpha = 0.1f),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(12.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(imageVector = Icons.Default.DirectionsCar, contentDescription = null, tint = EcoGreenPrimary, modifier = Modifier.size(32.dp))
+                            Spacer(modifier = Modifier.width(10.dp))
+                            Column {
+                                Text(text = "${veh.brand} ${veh.model}", fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                                Text(
+                                    text = "Capacidad: ${veh.batteryCapacityKwh.toInt()} kWh | Max: ${veh.maxChargePowerKw} kW",
+                                    fontSize = 12.sp,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+                    }
+                } else {
+                    Text(
+                        text = "Configura tu vehículo para filtrar cargadores compatibles automáticamente.",
+                        fontSize = 12.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+        }
+
+        // Active Reservation Card if present
+        if (activeReservation != null) {
+            Spacer(modifier = Modifier.height(16.dp))
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(20.dp),
+                colors = CardDefaults.cardColors(containerColor = EcoGreenPrimary.copy(alpha = 0.12f))
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(imageVector = Icons.Default.Bookmark, contentDescription = null, tint = EcoGreenPrimary)
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(text = "Reserva Activa (15 min)", fontWeight = FontWeight.Bold, color = EcoGreenPrimary)
+                    }
+                    Spacer(modifier = Modifier.height(6.dp))
+                    Text(text = activeReservation!!.stationName, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                    Text(text = "Conector: ${activeReservation!!.connectorType.displayName}", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Spacer(modifier = Modifier.height(10.dp))
+                    OutlinedButton(
+                        onClick = { viewModel.cancelReservation() },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(10.dp)
+                    ) {
+                        Text("Cancelar Reserva", color = Color(0xFFEF4444), fontSize = 12.sp)
+                    }
+                }
+            }
+        }
+
+        // Active Charging Session Card if present
+        if (chargingSession.isCharging || chargingSession.isCompleted) {
+            Spacer(modifier = Modifier.height(16.dp))
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(20.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(imageVector = Icons.Default.BatteryChargingFull, contentDescription = null, tint = EcoGreenPrimary)
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = if (chargingSession.isCharging) "Carga en Proceso" else "Carga Finalizada",
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(6.dp))
+                    Text(text = chargingSession.stationName, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+                    Text(text = "Batería: ${chargingSession.currentBatteryPercent}% | kWh: ${String.format("%.1f", chargingSession.energyKwhDelivered)}", fontSize = 12.sp)
+                    Spacer(modifier = Modifier.height(10.dp))
+                    Button(
+                        onClick = { viewModel.toggleChargingModal(true) },
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = ButtonDefaults.buttonColors(containerColor = EcoGreenPrimary),
+                        shape = RoundedCornerShape(10.dp)
+                    ) {
+                        Text("Ver Pantalla de Carga", fontSize = 12.sp, fontWeight = FontWeight.Bold)
                     }
                 }
             }

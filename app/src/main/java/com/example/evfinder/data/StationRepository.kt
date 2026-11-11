@@ -1,9 +1,11 @@
 package com.example.evfinder.data
 
+import com.example.evfinder.model.ChargingReservation
 import com.example.evfinder.model.ChargingStation
 import com.example.evfinder.model.ConnectorType
 import com.example.evfinder.model.PowerCategory
 import com.example.evfinder.model.StationFilter
+import com.example.evfinder.model.StationReview
 import com.example.evfinder.model.StationStatus
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -196,6 +198,26 @@ class StationRepository {
     private val _favoritesFlow = MutableStateFlow<Set<String>>(emptySet())
     val favoritesFlow: StateFlow<Set<String>> = _favoritesFlow.asStateFlow()
 
+    // Waiting Queue Map: stationId -> List of waiting users
+    private val waitingListMap = mutableMapOf<String, MutableList<String>>(
+        "st_03" to mutableListOf("Roberto M. (Fila #1)"),
+        "st_09" to mutableListOf("Gustavo P. (Fila #1)", "Ana K. (Fila #2)")
+    )
+
+    // Initial reviews map
+    private val reviewsMap = mutableMapOf<String, MutableList<StationReview>>(
+        "st_01" to mutableListOf(
+            StationReview("r1", "st_01", "Mariano V.", 5.0, "Carga ultra rápida excelente. El tótem es nuevo.", "Hace 2 días"),
+            StationReview("r2", "st_01", "Carlos Taxista", 4.8, "Muy buena ubicación en Puerto Madero. Hay cafetería al lado.", "Hace 1 semana")
+        ),
+        "st_02" to mutableListOf(
+            StationReview("r3", "st_02", "Laura G.", 4.5, "Funciona muy bien el conector CCS2.", "Hace 3 días")
+        )
+    )
+
+    private val _activeReservation = MutableStateFlow<ChargingReservation?>(null)
+    val activeReservation: StateFlow<ChargingReservation?> = _activeReservation.asStateFlow()
+
     fun updateFavoritesForUser(userId: String, isGuest: Boolean) {
         if (isGuest) {
             _favoritesFlow.value = emptySet()
@@ -221,8 +243,126 @@ class StationRepository {
         return Result.success(isNowFavorite)
     }
 
+    fun getReviewsForStation(stationId: String): List<StationReview> {
+        return reviewsMap[stationId] ?: emptyList()
+    }
+
+    fun addReview(stationId: String, userName: String, rating: Double, comment: String) {
+        val newReview = StationReview(
+            id = "r_${System.currentTimeMillis()}",
+            stationId = stationId,
+            userName = userName.ifBlank { "Usuario ECOGO" },
+            rating = rating,
+            comment = comment,
+            dateText = "Reciente"
+        )
+        val list = reviewsMap.getOrPut(stationId) { mutableListOf() }
+        list.add(0, newReview)
+    }
+
+    fun getWaitingList(stationId: String): List<String> {
+        return waitingListMap[stationId] ?: emptyList()
+    }
+
+    fun joinWaitingList(stationId: String, userName: String): Int {
+        val queue = waitingListMap.getOrPut(stationId) { mutableListOf() }
+        val entryName = "$userName (Tu Turno)"
+        queue.add(entryName)
+        return queue.size
+    }
+
+    fun reservePlug(station: ChargingStation, connector: ConnectorType): Result<ChargingReservation> {
+        if (station.status != StationStatus.AVAILABLE || station.availablePlugs <= 0) {
+            return Result.failure(Exception("No hay mangueras disponibles para reservar en esta estación."))
+        }
+
+        // Decrement available plugs in state
+        val updatedList = _allStations.value.map { st ->
+            if (st.id == station.id) {
+                val newAvailable = (st.availablePlugs - 1).coerceAtLeast(0)
+                val newStatus = if (newAvailable == 0) StationStatus.BUSY else st.status
+                st.copy(availablePlugs = newAvailable, status = newStatus)
+            } else st
+        }
+        _allStations.value = updatedList
+
+        val reservation = ChargingReservation(
+            id = "res_${System.currentTimeMillis()}",
+            stationId = station.id,
+            stationName = station.name,
+            connectorType = connector
+        )
+        _activeReservation.value = reservation
+        return Result.success(reservation)
+    }
+
+    fun startCharging(stationId: String): Result<Boolean> {
+        val currentRes = _activeReservation.value
+        val station = _allStations.value.firstOrNull { it.id == stationId }
+            ?: return Result.failure(Exception("Estación no encontrada."))
+
+        if (station.status == StationStatus.OUT_OF_SERVICE) {
+            return Result.failure(Exception("La estación se encuentra fuera de servicio."))
+        }
+
+        // Check if station has available plugs OR user holds an active reservation for this station
+        val hasReservation = currentRes != null && currentRes.stationId == stationId
+        if (station.availablePlugs <= 0 && !hasReservation) {
+            return Result.failure(Exception("Todas las mangueras están ocupadas. Por favor únete a la fila de espera."))
+        }
+
+        // Consume plug or active reservation
+        if (hasReservation) {
+            _activeReservation.value = null
+        } else {
+            val updatedList = _allStations.value.map { st ->
+                if (st.id == stationId) {
+                    val newAvailable = (st.availablePlugs - 1).coerceAtLeast(0)
+                    val newStatus = if (newAvailable == 0) StationStatus.BUSY else st.status
+                    st.copy(availablePlugs = newAvailable, status = newStatus)
+                } else st
+            }
+            _allStations.value = updatedList
+        }
+
+        return Result.success(true)
+    }
+
+    fun finishCharging(stationId: String) {
+        val updatedList = _allStations.value.map { st ->
+            if (st.id == stationId) {
+                val newAvailable = (st.availablePlugs + 1).coerceAtMost(st.totalPlugs)
+                val newStatus = if (st.status == StationStatus.BUSY && newAvailable > 0) StationStatus.AVAILABLE else st.status
+                st.copy(availablePlugs = newAvailable, status = newStatus)
+            } else st
+        }
+        _allStations.value = updatedList
+    }
+
+    fun cancelReservation() {
+        val currentRes = _activeReservation.value ?: return
+        val updatedList = _allStations.value.map { st ->
+            if (st.id == currentRes.stationId) {
+                val newAvailable = (st.availablePlugs + 1).coerceAtMost(st.totalPlugs)
+                val newStatus = if (st.status == StationStatus.BUSY && newAvailable > 0) StationStatus.AVAILABLE else st.status
+                st.copy(availablePlugs = newAvailable, status = newStatus)
+            } else st
+        }
+        _allStations.value = updatedList
+        _activeReservation.value = null
+    }
+
+    fun reportProblem(stationId: String) {
+        val updatedList = _allStations.value.map { st ->
+            if (st.id == stationId) {
+                st.copy(status = StationStatus.OUT_OF_SERVICE, availablePlugs = 0)
+            } else st
+        }
+        _allStations.value = updatedList
+    }
+
     fun filterStations(filter: StationFilter): List<ChargingStation> {
-        return initialStations.filter { station ->
+        return _allStations.value.filter { station ->
             // Search query matches name, operator, city, or address
             val queryMatch = filter.searchQuery.isBlank() ||
                     station.name.contains(filter.searchQuery, ignoreCase = true) ||
