@@ -81,7 +81,10 @@ fun MapScreen(
 ) {
     val context = LocalContext.current
     var isSearchExpanded by remember { mutableStateOf(false) }
-    var useOpenStreetMap by remember { mutableStateOf(false) } // Default to Google Maps SDK
+    
+    // TEMPORARY FALLBACK FIX FOR PRESENTATION:
+    // Force OpenStreetMap by default to avoid the grey grid if Google Maps API key gets blocked or reset
+    var useOpenStreetMap by remember { mutableStateOf(true) }
 
     Box(modifier = modifier.fillMaxSize()) {
         // Map View Layer (OpenStreetMap vector engine or Google Maps SDK)
