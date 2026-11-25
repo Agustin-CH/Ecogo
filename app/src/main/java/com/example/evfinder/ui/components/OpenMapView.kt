@@ -62,6 +62,7 @@ fun OpenMapView(
     // Animate to selected station location
     LaunchedEffect(selectedStation) {
         selectedStation?.let {
+            // Avoid jumping if the station was just clicked but map is already near it
             mapView.controller.animateTo(GeoPoint(it.latitude, it.longitude), 14.5, 700L)
         }
     }
